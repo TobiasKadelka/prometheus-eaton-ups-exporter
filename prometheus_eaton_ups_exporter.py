@@ -4,12 +4,19 @@ import sys
 import time
 import argparse
 import traceback
-
-from argparse import HelpFormatter, SUPPRESS, OPTIONAL, ZERO_OR_MORE
-
+from argparse import (
+    Action,
+    ArgumentParser,
+    HelpFormatter,
+    OPTIONAL,
+    SUPPRESS,
+    ZERO_OR_MORE
+    )
 from prometheus_client import start_http_server, REGISTRY
 from prometheus_eaton_ups_exporter.scraper_globals import REQUEST_TIMEOUT
 from prometheus_eaton_ups_exporter.exporter import UPSMultiExporter
+
+from typing import Tuple
 
 DEFAULT_PORT = 9795
 DEFAULT_HOST = "0.0.0.0"
@@ -18,11 +25,14 @@ DEFAULT_HOST = "0.0.0.0"
 class CustomFormatter(HelpFormatter):
     """Custom argparse formatter to provide defaults and to split newlines."""
 
-    def _split_lines(self, text, width):
+    def _split_lines(self,
+                     text: str,
+                     width: int) -> str:
         """Help message formatter which retains formatting of all help text."""
         return text.splitlines()
 
-    def _get_help_string(self, action):
+    def _get_help_string(self,
+                         action: Action) -> str:
         """Help message formatter which adds default values to
         argument help."""
         help = action.help
@@ -36,19 +46,22 @@ class CustomFormatter(HelpFormatter):
 
 class Range(object):
 
-    def __init__(self, start, end):
+    def __init__(self,
+                 start: int,
+                 end: int) -> None:
         self.start = start
         self.end = end
         self._name_parser_map = {}
 
-    def __eq__(self, other):
+    def __eq__(self,
+               other: int) -> bool:
         return self.start <= other <= self.end
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"range {self.start} - {self.end}"
 
 
-def create_parser():
+def create_parser() -> ArgumentParser:
     """Prepare command line arguments."""
     parser = argparse.ArgumentParser(
         description="Prometheus Exporter for Eaton UPSs.",
@@ -61,14 +74,12 @@ def create_parser():
              'If the IP is omitted, the exporter listens on all interfaces.',
         default=f"{DEFAULT_HOST}:{DEFAULT_PORT}"
     )
-
     parser.add_argument(
         "-c", "--config",
         help="Configuration JSON file containing "
              "UPS addresses and login info",
         required=True
     )
-
     parser.add_argument(
         '-k', '--insecure',
         action='store_true',
@@ -76,21 +87,18 @@ def create_parser():
              'with self-signed SSL certificates',
         default=False
     )
-
     parser.add_argument(
         '-t', '--threading',
         action='store_true',
         help='Whether to use multi-threading for scraping (faster)',
         default=False
     )
-
     parser.add_argument(
         '-v', '--verbose',
         action='store_true',
         help='Be more verbose',
         default=False
     )
-
     parser.add_argument(
         '--login-timeout',
         type=float,
@@ -98,11 +106,10 @@ def create_parser():
         choices=[Range(REQUEST_TIMEOUT, 10)],
         default=3
     )
-
     return parser
 
 
-def split_listen_address(listen_address):
+def split_listen_address(listen_address: str) -> Tuple[str, int]:
     """Split listen address into host and port."""
     if ':' in listen_address:
         host_address, port = listen_address.split(':')
@@ -156,7 +163,7 @@ def run(args: argparse.Namespace) -> None:
         sys.exit(0)
 
 
-def main():
+def main() -> None:
     run(sys.argv[1:])
 
 
